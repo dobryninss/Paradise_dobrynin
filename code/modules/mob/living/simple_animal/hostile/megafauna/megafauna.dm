@@ -27,6 +27,7 @@
 	mob_size = MOB_SIZE_LARGE
 	layer = LARGE_MOB_LAYER //Looks weird with them slipping under mineral walls and cameras and shit otherwise
 	mouse_opacity = MOUSE_OPACITY_OPAQUE // Easier to click on in melee, they're giant targets anyway
+	dodging = FALSE // This needs to be false until someone fixes megafauna pathing so they dont lag-switch teleport at you (09-15-2023)
 	var/list/crusher_loot
 	var/medal_type
 	var/score_type = BOSS_SCORE
@@ -39,6 +40,13 @@
 	var/nest_range = 10
 	var/chosen_attack = 1 // chosen attack num
 	var/list/attack_action_types = list()
+	/// Has someone enabled hard mode?
+	var/enraged = FALSE
+	/// Path of the hardmode loot disk, if applicable.
+	var/enraged_loot
+	/// Hardmode one loot
+	var/enraged_unique_loot
+	/// Одинарный лут с хардмод фауны
 
 /mob/living/simple_animal/hostile/megafauna/Initialize(mapload)
 	. = ..()
@@ -71,6 +79,12 @@
 		var/datum/status_effect/crusher_damage/C = has_status_effect(STATUS_EFFECT_CRUSHERDAMAGETRACKING)
 		if(C && crusher_loot && C.total_damage >= maxHealth * 0.6)
 			spawn_crusher_loot()
+		if(enraged && length(loot) && enraged_loot) //Don't drop a disk if the boss drops no loot. Important for legion.
+			if(enraged_unique_loot)
+				loot += enraged_unique_loot
+			for(var/mob/living/M in urange(20, src)) //Yes big range, but for bubblegum arena
+				if(M.client)
+					loot += enraged_loot //Disk for each miner / borg.
 		if(!elimination)	//used so the achievment only occurs for the last legion to die.
 			grant_achievement(medal_type,score_type)
 			SSblackbox.record_feedback("tally", "megafauna_kills", 1, "[initial(name)]")
